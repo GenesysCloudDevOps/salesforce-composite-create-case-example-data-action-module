@@ -1,0 +1,52 @@
+{
+  "name": "Composite Create Case Example",
+  "integrationType": "salesforce-datadip",
+  "actionType": "custom",
+  "config": {
+    "request": {
+      "requestUrlTemplate": "/services/data/v54.0/composite/",
+      "requestType": "POST",
+      "headers": {},
+      "requestTemplate": "{\n    \"allOrNone\": true,\n    \"compositeRequest\": [{\n            \"method\": \"GET\",\n            \"referenceId\": \"Contact\",\n            \"url\": \"/services/data/v48.0/query/?q=SELECT Id FROM Contact WHERE Phone='${input.phone}' LIMIT 1\"\n        }, {\n            \"method\": \"POST\",\n            \"referenceId\": \"NewCase1\",\n            \"url\": \"/services/data/v48.0/sobjects/Case\",\n            \"body\": {\n                \"ContactId\": \"@{Contact.records[0].Id}\",\n                \"Status\": \"New\",\n                \"Origin\": \"Phone\"\n            }\n        }, {\n            \"method\": \"GET\",\n            \"referenceId\": \"CaseInfo\",\n            \"url\": \"/services/data/v20.0/sobjects/Case/@{NewCase1.id}?fields=Id,CaseNumber\"\n        }\n    ]\n}"
+    },
+    "response": {
+      "translationMap": {
+        "caseIdArray": "$.compositeResponse[?(@.body.attributes.type == 'Case')].body.Id",
+        "caseNumArray": "$.compositeResponse[?(@.body.attributes.type == 'Case')].body.CaseNumber"
+      },
+      "translationMapDefaults": {
+        "caseIdArray": "\"\"",
+        "caseNumArray": "\"\""
+      },
+      "successTemplate": "{ \"caseNumber\": ${successTemplateUtils.firstFromArray(\"${caseNumArray}\", \"$esc.quote$esc.quote\")}, \"caseId\": ${successTemplateUtils.firstFromArray(\"${caseIdArray}\", \"$esc.quote$esc.quote\")} }"
+    }
+  },
+  "contract": {
+    "input": {
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "output": {
+      "successSchema": {
+        "type": "object",
+        "properties": {
+          "caseNumber": {
+            "type": "string"
+          },
+          "caseId": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "secure": false
+}
